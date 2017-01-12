@@ -1,0 +1,10 @@
+CREATE SCHEMA IF NOT EXISTS ec;
+
+
+CREATE TABLE IF NOT EXISTS ec.products(
+    productID SERIAL,
+    name varchar[255],
+    price float
+)
+
+CREATE TABLE IF NOT EXISTS ec.category
