@@ -1,21 +1,21 @@
 package rest
 
 import akka.http.scaladsl.server.Route
-import dao.{BaseRepository, ProductsRepository}
-import domain.{ProductEntity, Products}
+import dao.BaseRepository
+import domain.{Product, ProductEntity, Products}
 import spray.json.DefaultJsonProtocol
 
-trait ProductsProtocol extends DefaultJsonProtocol {
-
+object ProductsProtocol extends DefaultJsonProtocol {
+  implicit  val productFormat = jsonFormat3(ProductEntity)
+  implicit val simpleProductFormat = jsonFormat2(Product)
 }
 
 class ProductsService extends BaseCrudService[ProductEntity, Products] {
   override val basePath: String = "categories"
   override val repository: BaseRepository[Products, ProductEntity] = new ProductsRepository
 
-  // It's not nice but allows to reduce boiler plate
-  override abstract def completeReadEntityRoute(entity: ProductEntity): Route = ???
+  import ProductsProtocol._
 
-  // It's not nice but allows to reduce boiler plate
-  override abstract def completeReadEntitiesRoute(entities: Seq[ProductEntity]): Route = ???
+  override abstract val completeReadEntityRoute: Route = complete(e)
+  override abstract val completeReadEntitiesRoute: Route = _
 }

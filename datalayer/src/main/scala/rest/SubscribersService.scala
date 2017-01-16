@@ -2,7 +2,7 @@ package rest
 
 import akka.http.scaladsl.server.Directives.complete
 import akka.http.scaladsl.server.{Directives, Route}
-import dao.{BaseRepository, SubscribersRepository}
+import dao.BaseRepository
 import domain.{Subscriber, SubscriberEntity, Subscribers}
 import spray.json.DefaultJsonProtocol
 

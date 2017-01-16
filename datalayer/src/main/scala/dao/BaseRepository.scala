@@ -9,6 +9,7 @@ import scala.reflect._
 
 
 object DriverHelper {
+  // TODO this module must be updated with config instead of hardconding
   val user = "postgres"
   val url = "jdbc:postgresql://localhost:5432/LocalDB"
   val password = "admin"

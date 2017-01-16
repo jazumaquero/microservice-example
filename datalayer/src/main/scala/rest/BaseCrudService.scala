@@ -11,6 +11,7 @@ import scala.util.{Failure, Success}
 abstract class BaseCrudService[E <: BaseEntity, T <: BaseTable[E]]() {
   val basePath: String
   val repository: BaseRepository[T, E]
+
   protected val createRoute = path(basePath) {
     post {
       entity(as[E]) {
@@ -28,7 +29,7 @@ abstract class BaseCrudService[E <: BaseEntity, T <: BaseTable[E]]() {
       get {
         onComplete(repository.findById(id)) {
           case Success(entityOption) => entityOption match {
-            case Some(entity) => completeReadEntityRoute(entity)
+            case Some(entity) => complete(entity)
             case None => complete(NotFound, s"Missing entity with id = $id")
           }
           case Failure(ex) => complete(InternalServerError, s"Some error happen while reading entity: ${ex.getMessage}")
@@ -39,7 +40,7 @@ abstract class BaseCrudService[E <: BaseEntity, T <: BaseTable[E]]() {
   protected val readAllRoute = path(basePath / "all") {
     get {
       onComplete(repository.findAll) {
-        case Success(entities) => completeReadEntitiesRoute(entities)
+        case Success(entities) => complete(entity)
         case Failure(ex) => complete(InternalServerError, s"Some error happen while reading all entities: ${ex.getMessage}")
       }
     }
@@ -72,8 +73,8 @@ abstract class BaseCrudService[E <: BaseEntity, T <: BaseTable[E]]() {
   protected val routes = createRoute ~ readRoute ~ readAllRoute ~ updateRoute ~ deleteRoute
 
   // It's not nice but allows to reduce boiler plate
-  abstract def completeReadEntityRoute(entity: E): Route
+  abstract val completeReadEntityRoute: Route
 
   // It's not nice but allows to reduce boiler plate
-  abstract def completeReadEntitiesRoute(entities: Seq[E]): Route
+  abstract val completeReadEntitiesRoute: Route
 }
