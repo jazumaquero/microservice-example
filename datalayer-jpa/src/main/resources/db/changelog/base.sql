@@ -62,3 +62,28 @@ CREATE TABLE IF NOT EXISTS ec.buy_event(
     subscriberId bigint REFERENCES ec.subscribers(id) ON DELETE CASCADE,
     CONSTRAINT buy_event_pkey PRIMARY KEY (id)
 );
+
+
+CREATE OR REPLACE VIEW ec.product_events AS
+    SELECT p.productid as productid, q.categoryid as categoryid, p.num as num 
+    FROM (
+        SELECT productid, count(1) AS num 
+        FROM ec.buy_event 
+        GROUP BY productid 
+        ORDER BY num
+    ) p
+    JOIN ec.product_categories  q
+    ON p.productid = q.productid
+;
+
+CREATE OR REPLACE VIEW ec.subscribers_events AS
+    SELECT p.subscriberid as subscriberid, q.categoryid as categoryid, p.num as num 
+    FROM (
+        SELECT subscriberid, count(1) AS num 
+        FROM ec.buy_event 
+        GROUP BY subscriberid 
+        ORDER BY num
+    ) p
+    JOIN ec.subscriber_categories  q
+    ON p.subscriberid = q.subscriberid
+;

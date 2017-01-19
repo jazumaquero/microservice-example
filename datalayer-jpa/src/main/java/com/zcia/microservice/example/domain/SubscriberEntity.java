@@ -1,8 +1,3 @@
-/**
- * -----------------------------------------------------------------------
- *     Copyright (C) 2017 LM Ericsson Limited.  All rights reserved.
- * -----------------------------------------------------------------------
- */
 package com.zcia.microservice.example.domain;
 
 import java.io.Serializable;
@@ -17,8 +12,6 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
@@ -28,7 +21,7 @@ import javax.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "subscribers", schema = "ec", uniqueConstraints = { @UniqueConstraint(name = "subscriber_email_unique", columnNames = { "email" }) })
-@SequenceGenerator(name = "subscriber_seq", sequenceName = "subscriber_seq", schema = "ec", initialValue = 1, allocationSize = 1)
+@SequenceGenerator(name = "subscriber_seq", sequenceName = "ec.subscriber_seq", initialValue = 1, allocationSize = 1)
 public class SubscriberEntity implements Serializable
 {
     private static final long serialVersionUID = 4351507993719944582L;
@@ -45,12 +38,14 @@ public class SubscriberEntity implements Serializable
     @NotNull
     private String email;
 
-    @ManyToMany(cascade = CascadeType.ALL)
-    @JoinTable(schema = "ec", name = "subscriber_categories", joinColumns = @JoinColumn(name = "subscriberId", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "categoryId", referencedColumnName = "id"))
+    @ManyToMany(mappedBy = "subscribers")
     private Set<CategoryEntity> categories;
 
     @OneToMany(mappedBy = "subscriber", cascade = CascadeType.ALL)
     private List<BuyingEventEntity> events;
+
+    @OneToMany(mappedBy = "subscriber", cascade = CascadeType.ALL)
+    private List<SubscriberBuyEventEntity> subscriberEvents;
 
     public SubscriberEntity()
     {
@@ -107,6 +102,16 @@ public class SubscriberEntity implements Serializable
     public void setEvents(List<BuyingEventEntity> events)
     {
         this.events = events;
+    }
+
+    public List<SubscriberBuyEventEntity> getSubscriberEvents()
+    {
+        return subscriberEvents;
+    }
+
+    public void setSubscriberEvents(List<SubscriberBuyEventEntity> subscriberEvents)
+    {
+        this.subscriberEvents = subscriberEvents;
     }
 
 }

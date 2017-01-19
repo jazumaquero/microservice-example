@@ -1,8 +1,3 @@
-/**
- * -----------------------------------------------------------------------
- *     Copyright (C) 2017 LM Ericsson Limited.  All rights reserved.
- * -----------------------------------------------------------------------
- */
 package com.zcia.microservice.example.domain;
 
 import java.io.Serializable;
@@ -17,11 +12,10 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
-import javax.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "buy_event", schema = "ec")
-@SequenceGenerator(name = "buy_event_seq", sequenceName = "buy_event_seq", schema = "ec", initialValue = 1, allocationSize = 1)
+@SequenceGenerator(name = "buy_event_seq", sequenceName = "ec.buy_event_seq", initialValue = 1, allocationSize = 1)
 public class BuyingEventEntity implements Serializable
 {
     private static final long serialVersionUID = -1250157316381845398L;
@@ -31,15 +25,14 @@ public class BuyingEventEntity implements Serializable
     private Long id;
 
     @Column
-    @NotNull
     private Date tstamp;
 
     @ManyToOne
-    @JoinColumn(name = "productId")
+    @JoinColumn(name = "productid")
     private ProductEntity product;
 
     @ManyToOne
-    @JoinColumn(name = "subscriberId")
+    @JoinColumn(name = "subscriberid")
     private SubscriberEntity subscriber;
 
     public BuyingEventEntity()

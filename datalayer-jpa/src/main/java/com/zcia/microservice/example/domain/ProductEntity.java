@@ -1,8 +1,3 @@
-/**
- * -----------------------------------------------------------------------
- *     Copyright (C) 2017 LM Ericsson Limited.  All rights reserved.
- * -----------------------------------------------------------------------
- */
 package com.zcia.microservice.example.domain;
 
 import java.io.Serializable;
@@ -17,8 +12,6 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
@@ -28,7 +21,7 @@ import javax.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "products", schema = "ec", uniqueConstraints = { @UniqueConstraint(name = "product_name_unique", columnNames = { "name" }) })
-@SequenceGenerator(name = "product_seq", sequenceName = "product_seq", schema = "ec", initialValue = 1, allocationSize = 1)
+@SequenceGenerator(name = "product_seq", sequenceName = "ec.product_seq", initialValue = 1, allocationSize = 1)
 public class ProductEntity implements Serializable
 {
     private static final long serialVersionUID = 2894362722708300394L;
@@ -45,12 +38,14 @@ public class ProductEntity implements Serializable
     @NotNull
     private Float price;
 
-    @ManyToMany(cascade = CascadeType.ALL)
-    @JoinTable(schema = "ec", name = "product_categories", joinColumns = @JoinColumn(name = "productId", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "categoryId", referencedColumnName = "id"))
+    @ManyToMany(mappedBy = "products")
     private Set<CategoryEntity> categories;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     private List<BuyingEventEntity> events;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    private List<ProductBuyEventEntity> productEvents;
 
     public ProductEntity()
     {
@@ -107,6 +102,16 @@ public class ProductEntity implements Serializable
     public void setEvents(List<BuyingEventEntity> events)
     {
         this.events = events;
+    }
+
+    public List<ProductBuyEventEntity> getProductEvents()
+    {
+        return productEvents;
+    }
+
+    public void setProductEvents(List<ProductBuyEventEntity> productEvents)
+    {
+        this.productEvents = productEvents;
     }
 
 }

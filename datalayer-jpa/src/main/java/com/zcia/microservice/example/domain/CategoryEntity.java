@@ -1,19 +1,17 @@
-/**
- * -----------------------------------------------------------------------
- *     Copyright (C) 2017 LM Ericsson Limited.  All rights reserved.
- * -----------------------------------------------------------------------
- */
 package com.zcia.microservice.example.domain;
 
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
@@ -22,7 +20,7 @@ import javax.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "categories", schema = "ec", uniqueConstraints = { @UniqueConstraint(name = "category_name_unique", columnNames = { "name" }) })
-@SequenceGenerator(name = "category_seq", sequenceName = "category_seq", schema = "ec", initialValue = 1, allocationSize = 1)
+@SequenceGenerator(name = "category_seq", sequenceName = "ec.category_seq", initialValue = 1, allocationSize = 1)
 public class CategoryEntity implements Serializable
 {
     private static final long serialVersionUID = 5164540774408244410L;
@@ -35,10 +33,12 @@ public class CategoryEntity implements Serializable
     @NotNull
     private String name;
 
-    @ManyToMany(mappedBy = "categories")
+    @ManyToMany(cascade = CascadeType.ALL)
+    @JoinTable(schema = "ec", name = "product_categories", joinColumns = @JoinColumn(name = "categoryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "productid", referencedColumnName = "id"))
     private Set<ProductEntity> products;
 
-    @ManyToMany(mappedBy = "categories")
+    @ManyToMany(cascade = CascadeType.ALL)
+    @JoinTable(schema = "ec", name = "subscriber_categories", joinColumns = @JoinColumn(name = "categoryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "subscriberid", referencedColumnName = "id"))
     private Set<SubscriberEntity> subscribers;
 
     public CategoryEntity()

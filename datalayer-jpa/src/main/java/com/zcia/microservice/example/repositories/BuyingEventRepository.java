@@ -1,17 +1,12 @@
-/**
- * -----------------------------------------------------------------------
- *     Copyright (C) 2017 LM Ericsson Limited.  All rights reserved.
- * -----------------------------------------------------------------------
- */
 package com.zcia.microservice.example.repositories;
 
-import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
 import com.zcia.microservice.example.domain.BuyingEventEntity;
 
-@RepositoryRestResource
-public interface BuyingEventRepository extends PagingAndSortingRepository<BuyingEventEntity, Long>
+@RepositoryRestResource(path = "events", collectionResourceRel = "events")
+public interface BuyingEventRepository extends CrudRepository<BuyingEventEntity, Long>
 {
 
 }
