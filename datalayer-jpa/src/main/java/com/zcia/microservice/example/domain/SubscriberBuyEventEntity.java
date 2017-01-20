@@ -6,8 +6,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
@@ -18,14 +16,21 @@ public class SubscriberBuyEventEntity implements Serializable
     private static final long serialVersionUID = -1040037996244589620L;
 
     @Id
-    @ManyToOne
-    @JoinColumn(name = "subscriberid")
-    private SubscriberEntity subscriber;
+    @Column(name = "subscriberid")
+    private Long subscriberId;
 
     @Id
-    @ManyToOne
-    @JoinColumn(name = "categoryid")
-    private CategoryEntity category;
+    @Column(name = "categoryid")
+    private Long categoryId;
+
+    @Column(name = "subscriber_name")
+    private String subscriberName;
+
+    @Column(name = "subscriber_email")
+    private String subscriberEmail;
+
+    @Column(name = "category")
+    private String categoryName;
 
     @Column
     private Long num;
@@ -35,24 +40,54 @@ public class SubscriberBuyEventEntity implements Serializable
         super();
     }
 
-    public SubscriberEntity getSubscriber()
+    public Long getSubscriberId()
     {
-        return subscriber;
+        return subscriberId;
     }
 
-    public void setSubscriber(SubscriberEntity subscriber)
+    public void setSubscriberId(Long subscriberId)
     {
-        this.subscriber = subscriber;
+        this.subscriberId = subscriberId;
     }
 
-    public CategoryEntity getCategory()
+    public Long getCategoryId()
     {
-        return category;
+        return categoryId;
     }
 
-    public void setCategory(CategoryEntity category)
+    public void setCategoryId(Long categoryId)
     {
-        this.category = category;
+        this.categoryId = categoryId;
+    }
+
+    public String getSubscriberName()
+    {
+        return subscriberName;
+    }
+
+    public void setSubscriberName(String subscriberName)
+    {
+        this.subscriberName = subscriberName;
+    }
+
+    public String getSubscriberEmail()
+    {
+        return subscriberEmail;
+    }
+
+    public void setSubscriberEmail(String subscriberEmail)
+    {
+        this.subscriberEmail = subscriberEmail;
+    }
+
+    public String getCategoryName()
+    {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName)
+    {
+        this.categoryName = categoryName;
     }
 
     public Long getNum()

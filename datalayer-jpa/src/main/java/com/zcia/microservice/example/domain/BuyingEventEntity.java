@@ -8,10 +8,9 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "buy_event", schema = "ec")
@@ -27,17 +26,28 @@ public class BuyingEventEntity implements Serializable
     @Column
     private Date tstamp;
 
-    @ManyToOne
-    @JoinColumn(name = "productid")
-    private ProductEntity product;
+    @Column(name = "productid")
+    @NotNull
+    private Long productId;
 
-    @ManyToOne
-    @JoinColumn(name = "subscriberid")
-    private SubscriberEntity subscriber;
+    @Column(name = "subscriberid")
+    @NotNull
+    private Long subscriberId;
 
     public BuyingEventEntity()
     {
         super();
+        this.tstamp = new Date();
+    }
+
+    public Long getId()
+    {
+        return id;
+    }
+
+    public void setId(Long id)
+    {
+        this.id = id;
     }
 
     public Date getTstamp()
@@ -50,24 +60,24 @@ public class BuyingEventEntity implements Serializable
         this.tstamp = tstamp;
     }
 
-    public ProductEntity getProduct()
+    public Long getProductId()
     {
-        return product;
+        return productId;
     }
 
-    public void setProduct(ProductEntity product)
+    public void setProductId(Long productId)
     {
-        this.product = product;
+        this.productId = productId;
     }
 
-    public SubscriberEntity getSubscriber()
+    public Long getSubscriberId()
     {
-        return subscriber;
+        return subscriberId;
     }
 
-    public void setSubscriber(SubscriberEntity subscriber)
+    public void setSubscriberId(Long subscriberId)
     {
-        this.subscriber = subscriber;
+        this.subscriberId = subscriberId;
     }
 
 }

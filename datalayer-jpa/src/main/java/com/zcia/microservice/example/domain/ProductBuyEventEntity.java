@@ -6,8 +6,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
@@ -18,41 +16,60 @@ public class ProductBuyEventEntity implements Serializable
     private static final long serialVersionUID = -5097063682625903856L;
 
     @Id
-    @ManyToOne
-    @JoinColumn(name = "productid")
-    private ProductEntity product;
+    @Column(name = "productid")
+    private Long productId;
 
     @Id
-    @ManyToOne
-    @JoinColumn(name = "categoryid")
-    private CategoryEntity category;
+    @Column(name = "categoryid")
+    private Long categoryId;
+
+    @Column(name = "product")
+    private String productName;
+
+    @Column(name = "category")
+    private String categoryName;
 
     @Column
     private Long num;
 
-    public ProductBuyEventEntity()
+    public Long getProductId()
     {
-        super();
+        return productId;
     }
 
-    public ProductEntity getProduct()
+    public void setProductId(Long productId)
     {
-        return product;
+        this.productId = productId;
     }
 
-    public void setProduct(ProductEntity product)
+    public Long getCategoryId()
     {
-        this.product = product;
+        return categoryId;
     }
 
-    public CategoryEntity getCategory()
+    public void setCategoryId(Long categoryId)
     {
-        return category;
+        this.categoryId = categoryId;
     }
 
-    public void setCategory(CategoryEntity category)
+    public String getProductName()
     {
-        this.category = category;
+        return productName;
+    }
+
+    public void setProductName(String productName)
+    {
+        this.productName = productName;
+    }
+
+    public String getCategoryName()
+    {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName)
+    {
+        this.categoryName = categoryName;
     }
 
     public Long getNum()

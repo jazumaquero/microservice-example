@@ -37,8 +37,8 @@ DROP SEQUENCE IF EXISTS ec.product_categories_seq;
 CREATE SEQUENCE ec.product_categories_seq INCREMENT 1 START 1 NO CYCLE;
 CREATE TABLE IF NOT EXISTS ec.product_categories(
     id bigint NOT NULL DEFAULT nextval('ec.product_categories_seq'::regclass),
-    categoryId bigint REFERENCES ec.categories(id) ON DELETE CASCADE,
-    productId bigint REFERENCES ec.products(id) ON DELETE CASCADE,
+    categoryId bigint NOT NULL REFERENCES ec.categories(id) ON DELETE CASCADE,
+    productId bigint NOT NULL REFERENCES ec.products(id) ON DELETE CASCADE,
     CONSTRAINT product_category_pkey PRIMARY KEY (id)
 );
 
@@ -47,8 +47,8 @@ DROP SEQUENCE IF EXISTS ec.subscriber_categories_seq;
 CREATE SEQUENCE ec.subscriber_categories_seq INCREMENT 1 START 1 NO CYCLE;
 CREATE TABLE IF NOT EXISTS ec.subscriber_categories(
     id bigint NOT NULL DEFAULT nextval('ec.subscriber_categories_seq'::regclass),
-    categoryId bigint REFERENCES ec.categories(id) ON DELETE CASCADE,
-    subscriberId bigint REFERENCES ec.subscribers(id) ON DELETE CASCADE,
+    categoryId bigint NOT NULL REFERENCES ec.categories(id) ON DELETE CASCADE,
+    subscriberId bigint NOT NULL REFERENCES ec.subscribers(id) ON DELETE CASCADE,
     CONSTRAINT subscriber_category_pkey PRIMARY KEY (id)
 );
 
@@ -57,33 +57,46 @@ DROP SEQUENCE IF EXISTS ec.buy_event_seq;
 CREATE SEQUENCE ec.buy_event_seq INCREMENT 1 START 1 NO CYCLE;
 CREATE TABLE IF NOT EXISTS ec.buy_event(
     id bigint NOT NULL DEFAULT nextval('ec.buy_event_seq'::regclass),
-    tstamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    productId bigint REFERENCES ec.products(id) ON DELETE CASCADE,
-    subscriberId bigint REFERENCES ec.subscribers(id) ON DELETE CASCADE,
+    tstamp TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    productId bigint NOT NULL REFERENCES ec.products(id) ON DELETE CASCADE,
+    subscriberId bigint NOT NULL REFERENCES ec.subscribers(id) ON DELETE CASCADE,
     CONSTRAINT buy_event_pkey PRIMARY KEY (id)
 );
 
 
 CREATE OR REPLACE VIEW ec.product_events AS
-    SELECT p.productid as productid, q.categoryid as categoryid, p.num as num 
-    FROM (
-        SELECT productid, count(1) AS num 
-        FROM ec.buy_event 
-        GROUP BY productid 
-        ORDER BY num
-    ) p
-    JOIN ec.product_categories  q
-    ON p.productid = q.productid
+	SELECT t.productid AS productid, t.categoryid AS categoryid, t.num AS num, p.name AS product, c.name AS category
+	FROM (
+	    SELECT e.productid AS productid, q.categoryid AS categoryid, e.num AS num 
+	    FROM (
+	        SELECT productid, count(1) AS num 
+	        FROM ec.buy_event 
+	        GROUP BY productid 
+	    ) e
+	    JOIN ec.product_categories  q
+	    ON e.productid = q.productid
+	) t
+	JOIN ec.products as p
+	ON t.productid = p.id 
+	JOIN ec.categories as c
+	ON t.categoryid = c.id
 ;
 
+
 CREATE OR REPLACE VIEW ec.subscribers_events AS
-    SELECT p.subscriberid as subscriberid, q.categoryid as categoryid, p.num as num 
-    FROM (
-        SELECT subscriberid, count(1) AS num 
-        FROM ec.buy_event 
-        GROUP BY subscriberid 
-        ORDER BY num
-    ) p
-    JOIN ec.subscriber_categories  q
-    ON p.subscriberid = q.subscriberid
+	SELECT t.subscriberid AS subscriberid, t.categoryid AS categoryid, t.num AS num, s.email AS subscriber_name, s.email AS subscriber_email, c.name AS category
+	FROM (
+	    SELECT e.subscriberid AS subscriberid, q.categoryid AS categoryid, e.num AS num 
+	    FROM (
+	        SELECT subscriberid, count(1) AS num 
+	        FROM ec.buy_event 
+	        GROUP BY subscriberid 
+	    ) e
+	    JOIN ec.subscriber_categories q
+	    ON e.subscriberid = q.subscriberid
+	) t
+	JOIN ec.subscribers as s
+	ON t.subscriberid = s.id 
+	JOIN ec.categories as c
+	ON t.categoryid = c.id
 ;

@@ -1,9 +1,7 @@
 package com.zcia.microservice.example.domain;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
@@ -12,8 +10,9 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
-import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
@@ -38,20 +37,14 @@ public class ProductEntity implements Serializable
     @NotNull
     private Float price;
 
-    @ManyToMany(mappedBy = "products")
+    @ManyToMany(cascade = CascadeType.ALL)
+    @JoinTable(schema = "ec", name = "product_categories", joinColumns = @JoinColumn(name = "productid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "categoryid", referencedColumnName = "id"))
     private Set<CategoryEntity> categories;
-
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
-    private List<BuyingEventEntity> events;
-
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
-    private List<ProductBuyEventEntity> productEvents;
 
     public ProductEntity()
     {
         super();
         this.categories = new HashSet<>();
-        this.events = new ArrayList<>();
     }
 
     public Long getId()
@@ -92,26 +85,6 @@ public class ProductEntity implements Serializable
     public void setCategories(Set<CategoryEntity> categories)
     {
         this.categories = categories;
-    }
-
-    public List<BuyingEventEntity> getEvents()
-    {
-        return events;
-    }
-
-    public void setEvents(List<BuyingEventEntity> events)
-    {
-        this.events = events;
-    }
-
-    public List<ProductBuyEventEntity> getProductEvents()
-    {
-        return productEvents;
-    }
-
-    public void setProductEvents(List<ProductBuyEventEntity> productEvents)
-    {
-        this.productEvents = productEvents;
     }
 
 }

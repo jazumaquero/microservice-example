@@ -7,65 +7,50 @@ public class ProductBuyEventId implements Serializable
 {
     private static final long serialVersionUID = -4341429537206893503L;
 
-    private ProductEntity product;
-    private CategoryEntity category;
+    private Long productId;
+    private Long categoryId;
 
     public ProductBuyEventId()
     {
         super();
     }
 
-    public ProductEntity getProduct()
+    public Long getProductId()
     {
-        return product;
+        return productId;
     }
 
-    public void setProduct(ProductEntity product)
+    public void setProductId(Long productId)
     {
-        this.product = product;
+        this.productId = productId;
     }
 
-    public CategoryEntity getCategory()
+    public Long getCategoryId()
     {
-        return category;
+        return categoryId;
     }
 
-    public void setCategory(CategoryEntity category)
+    public void setCategoryId(Long categoryId)
     {
-        this.category = category;
+        this.categoryId = categoryId;
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(category.getId(), product.getId());
+        return Objects.hash(categoryId, productId);
     }
 
     @Override
     public boolean equals(Object obj)
     {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        ProductBuyEventId other = (ProductBuyEventId) obj;
-        if (category == null)
+        boolean equals = this == obj;
+        if (!equals && obj != null && obj instanceof ProductBuyEventId)
         {
-            if (other.category != null)
-                return false;
+            ProductBuyEventId other = (ProductBuyEventId) obj;
+            equals = Objects.equals(categoryId, other.categoryId) && Objects.equals(productId, other.productId);
         }
-        else if (!category.getId().equals(other.category.getId()))
-            return false;
-        if (product == null)
-        {
-            if (other.product != null)
-                return false;
-        }
-        else if (!product.getId().equals(other.product.getId()))
-            return false;
-        return true;
+        return equals;
     }
 
 }

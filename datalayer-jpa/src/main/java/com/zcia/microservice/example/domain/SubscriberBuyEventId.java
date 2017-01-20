@@ -7,65 +7,50 @@ public class SubscriberBuyEventId implements Serializable
 {
     private static final long serialVersionUID = 6385954839406711179L;
 
-    private SubscriberEntity subscriber;
-    private CategoryEntity category;
+    private Long subscriberId;
+    private Long categoryId;
 
     public SubscriberBuyEventId()
     {
         super();
     }
 
-    public SubscriberEntity getSubscriber()
+    public Long getSubscriberId()
     {
-        return subscriber;
+        return subscriberId;
     }
 
-    public void setSubscriber(SubscriberEntity subscriber)
+    public void setSubscriberId(Long subscriberId)
     {
-        this.subscriber = subscriber;
+        this.subscriberId = subscriberId;
     }
 
-    public CategoryEntity getCategory()
+    public Long getCategoryId()
     {
-        return category;
+        return categoryId;
     }
 
-    public void setCategory(CategoryEntity category)
+    public void setCategoryId(Long categoryId)
     {
-        this.category = category;
+        this.categoryId = categoryId;
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(category.getId(), subscriber.getId());
+        return Objects.hash(categoryId, subscriberId);
     }
 
     @Override
     public boolean equals(Object obj)
     {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        SubscriberBuyEventId other = (SubscriberBuyEventId) obj;
-        if (category == null)
+        boolean equals = this == obj;
+        if (!equals && obj != null && obj instanceof SubscriberBuyEventId)
         {
-            if (other.category != null)
-                return false;
+            SubscriberBuyEventId other = (SubscriberBuyEventId) obj;
+            equals = Objects.equals(categoryId, other.categoryId) && Objects.equals(subscriberId, other.subscriberId);
         }
-        else if (!category.getId().equals(other.category.getId()))
-            return false;
-        if (subscriber == null)
-        {
-            if (other.subscriber != null)
-                return false;
-        }
-        else if (!subscriber.getId().equals(other.subscriber.getId()))
-            return false;
-        return true;
+        return equals;
     }
 
 }

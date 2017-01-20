@@ -4,14 +4,11 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
@@ -33,12 +30,10 @@ public class CategoryEntity implements Serializable
     @NotNull
     private String name;
 
-    @ManyToMany(cascade = CascadeType.ALL)
-    @JoinTable(schema = "ec", name = "product_categories", joinColumns = @JoinColumn(name = "categoryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "productid", referencedColumnName = "id"))
+    @ManyToMany(mappedBy = "categories")
     private Set<ProductEntity> products;
 
-    @ManyToMany(cascade = CascadeType.ALL)
-    @JoinTable(schema = "ec", name = "subscriber_categories", joinColumns = @JoinColumn(name = "categoryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "subscriberid", referencedColumnName = "id"))
+    @ManyToMany(mappedBy = "categories")
     private Set<SubscriberEntity> subscribers;
 
     public CategoryEntity()
