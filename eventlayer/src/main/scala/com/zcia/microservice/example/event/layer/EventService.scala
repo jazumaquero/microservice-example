@@ -1,35 +1,35 @@
 package com.zcia.microservice.example.event.layer
 
-import akka.http.scaladsl.Http.OutgoingConnection
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse}
-import akka.http.scaladsl.model.StatusCodes.OK
+import java.io.IOException
+
+import akka.http.scaladsl.marshalling.ToResponseMarshallable
+import akka.http.scaladsl.model.StatusCodes.{BadRequest, OK, Created}
 import akka.http.scaladsl.server.Directives._
-import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Flow, Sink, Source}
+import akka.http.scaladsl.unmarshalling.Unmarshal
 
 import scala.concurrent.Future
 
-/**
-  * Created by zuma on 21/01/17.
-  */
-trait DatalayerClient{
-  protected implicit def system : ActorSystem
-  protected implicit def materializer : ActorMaterializer
-  protected implicit def datalayerClient : Flow[HttpRequest, HttpResponse, Future[OutgoingConnection]]
-  protected implicit def datalayerUri : String
+trait EventService extends BaseService with DatalayerClient {
 
-  def endpoint(request: HttpRequest): Future[HttpResponse] = Source.single(request).via(datalayerClient).runWith(Sink.head)
-
-  def request(): HttpRequest = HttpRequest(method=HttpMethods.GET, uri=uri)
-}
-
-trait EventService extends BaseService {
-  protected implicit val datalayerUri: String
-  protected implicit val client : Flow[HttpRequest, HttpResponse, Future[OutgoingConnection]]
-
-  protected val eventRoutes = path("events") {
-    get {
-      complete(OK, "Oh year")
+  protected def postEvent = path("events") {
+    post {
+      entity(as[Event]) { event =>
+        complete {
+          val result = createEvent(event) flatMap { r =>
+            r.status match {
+              case Created =>Unmarshal(r.entity).to[String].map(Right(_))
+              case BadRequest => Future.successful(Left(s"${r.entity}"))
+              case _ => Future.failed(new IOException(s"Error connecting with datalayer!"))
+            }
+          }
+          result.map[ToResponseMarshallable] {
+            case Right(x) => Created -> x
+            case Left(ex) => BadRequest -> ex
+          }
+        }
+      }
     }
   }
+
+  protected val eventRoutes = postEvent
 }
