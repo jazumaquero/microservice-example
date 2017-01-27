@@ -7,5 +7,5 @@ trait Config {
   private val config  = ConfigFactory.load()
   protected val httpConfig = config.getConfig("http")
   protected val datalayerConfig = config.getConfig("datalayer")
-
+  protected val mailchimpConfig = config.getConfig("mailchimp")
 }
