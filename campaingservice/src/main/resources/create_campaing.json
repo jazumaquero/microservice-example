@@ -1,0 +1,19 @@
+// POST /campaigns
+{
+  "recipients": {
+    "list_id": "7bcc383a5a"
+  },
+  "type": "regular",
+  "settings": {
+    "subject_line": "Your Purchase Receipt",
+    "reply_to": "orders@mammothhouse.com",
+    "from_name": "Customer Service"
+  }
+}
+
+// set content PUT /campaigns/{campaing_id}/content
+{
+  "html": "<p>The HTML to use for the saved campaign<./p>"
+}
+
+// sending is POST /campaigns/{campaing_id}/actions/send

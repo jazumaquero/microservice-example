@@ -1,0 +1,5 @@
+// POST /list/{list_id:String/members
+{
+  "email_address": "urist.mcvankab+3@freddiesjokes.com",
+  "status": "subscribed"
+}
