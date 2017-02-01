@@ -19,4 +19,6 @@ object Main extends App with Config with System.LoggerExecutor with CampaingServ
   override protected implicit def materializer = System.materializer
   override protected implicit def system = System.system
   override protected implicit val executor = System.system.dispatcher
+
+  processCampaing()
 }
