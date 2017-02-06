@@ -6,6 +6,7 @@ import spray.json.DefaultJsonProtocol
 
 // Mailchimp domain classes
 case class Member(email_address: String, status: String)
+case class Members(members: Seq[Member])
 case class Contact(company: String, address1: String, city: String, state: String, zip: String, country: String)
 case class CampaignDefaults(from_name: String, from_email: String, subject: String = "", language: String = "en")
 case class CampaignList(id: String, name: String,contact: Contact, permission_reminder: String, campaign_defaults: CampaignDefaults,email_type_option: Boolean=true)
@@ -18,6 +19,7 @@ case class Content(html: String)
 trait Protocol extends DefaultJsonProtocol {
   // Mailchimp Domain protocols
   implicit val memberFormat = jsonFormat(Member,"email_address", "status")
+  implicit val membersFormat = jsonFormat(Members,"members")
   implicit val contactFormat = jsonFormat(Contact, "company" ,"address1", "city" ,"state", "zip" ,"country")
   implicit val campaignDefaultsFormat = jsonFormat(CampaignDefaults, "from_name", "from_email", "subject", "language")
   implicit val campaignListFormat = jsonFormat(CampaignList, "id", "name", "contact","permission_reminder", "campaign_defaults", "email_type_option")
