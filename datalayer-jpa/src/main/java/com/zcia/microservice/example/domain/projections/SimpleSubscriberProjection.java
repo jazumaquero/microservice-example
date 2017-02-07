@@ -11,5 +11,5 @@ public interface SimpleSubscriberProjection
 
     public String getName();
 
-    public Float getEmail();
+    public String getEmail();
 }

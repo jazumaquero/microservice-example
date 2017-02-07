@@ -86,17 +86,17 @@ CREATE OR REPLACE VIEW ec.product_events AS
 CREATE OR REPLACE VIEW ec.subscribers_events AS
 	SELECT t.subscriberid AS subscriberid, t.categoryid AS categoryid, t.num AS num, s.email AS subscriber_name, s.email AS subscriber_email, c.name AS category
 	FROM (
-	    SELECT e.subscriberid AS subscriberid, q.categoryid AS categoryid, e.num AS num 
+	    SELECT subscriberid, categoryid, count(1) AS num
 	    FROM (
-	        SELECT subscriberid, count(1) AS num 
-	        FROM ec.buy_event 
-	        GROUP BY subscriberid 
-	    ) e
-	    JOIN ec.subscriber_categories q
-	    ON e.subscriberid = q.subscriberid
-	) t
-	JOIN ec.subscribers as s
+	        SELECT subscriberid ,categoryid
+	        FROM ec.buy_event AS e
+	        JOIN ec.product_categories AS pc
+	        ON e.productid = pc.productid
+	    ) p
+	    GROUP BY subscriberid, categoryid
+	) AS t
+	JOIN ec.subscribers AS s
 	ON t.subscriberid = s.id 
-	JOIN ec.categories as c
-	ON t.categoryid = c.id
+	JOIN ec.categories AS c
+	ON t.categoryid=c.id
 ;
