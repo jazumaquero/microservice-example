@@ -15,6 +15,9 @@ case class Settings(subject_line: String, reply_to: String, from_name: String)
 case class Campaign(id: String, recipients: Recipient, campaignType: String, settings: Settings)
 case class Content(html: String)
 
+// Datalayer domain classes
+case class SubscriberAggregations(name: String,email: String,category: String,num: Long)
+case class ProductAggregations(name: String,category: String,num: Long)
 
 trait Protocol extends DefaultJsonProtocol {
   // Mailchimp Domain protocols
@@ -28,4 +31,7 @@ trait Protocol extends DefaultJsonProtocol {
   implicit val campaignFormat = jsonFormat(Campaign,"id", "recipients", "type", "settings")
   implicit val contentFormat = jsonFormat(Content, "html")
 
+  // DataLayer Domain protocols
+  implicit val subscriberAggregationFormat = jsonFormat(SubscriberAggregations,"subscriberName","subscriberEmail","categoryName","num")
+  implicit val productAggregationFormat = jsonFormat(ProductAggregations,"productName","categoryName","num")
 }
