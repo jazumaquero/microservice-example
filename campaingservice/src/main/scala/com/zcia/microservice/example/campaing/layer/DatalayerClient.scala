@@ -15,11 +15,11 @@ trait DatalayerClient extends BaseService with Protocol {
 
   protected implicit def materializer: ActorMaterializer
 
-  protected val client = Http(system).outgoingConnection(datalayerConfig.getString("host"), datalayerConfig.getInt("port"))
+  protected val datalayerClient = Http(system).outgoingConnection(datalayerConfig.getString("host"), datalayerConfig.getInt("port"))
 
   protected def sendToDataLayer(request: HttpRequest): Future[HttpResponse] = {
     log.debug(s"Requesting following: $request")
-    Source.single(request).via(client).runWith(Sink.head)
+    Source.single(request).via(datalayerClient).runWith(Sink.head)
   }
 
   protected def getTopNItem(category: String, n: Integer, best: Boolean, path: String): Future[HttpResponse] = {

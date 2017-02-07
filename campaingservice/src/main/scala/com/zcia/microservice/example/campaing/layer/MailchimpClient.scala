@@ -16,14 +16,14 @@ trait MailchimpClient extends BaseService with Protocol {
   protected implicit def system: ActorSystem
   protected implicit def materializer: ActorMaterializer
 
-  protected val client = Http(system).outgoingConnection(mailchimpConfig.getString("host"))
+  protected val mailchimpClient = Http(system).outgoingConnection(mailchimpConfig.getString("host"))
   protected val version = mailchimpConfig.getString("version")
   protected val apiKey = mailchimpConfig.getString("apikey")
 
   protected def sendToMailchimp(request: HttpRequest): Future[HttpResponse] = {
     val credentials = BasicHttpCredentials("apikey", apiKey)
     log.debug(s"Requesting following: $request")
-    Source.single(request ~> addCredentials(credentials)).via(client).runWith(Sink.head)
+    Source.single(request ~> addCredentials(credentials)).via(mailchimpClient).runWith(Sink.head)
   }
 
   def createList(list: CampaignList): Future[HttpResponse] = {

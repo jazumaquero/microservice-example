@@ -16,6 +16,7 @@ case class Campaign(id: String, recipients: Recipient, campaignType: String, set
 case class Content(html: String)
 
 // Datalayer domain classes
+// TODO add href to allow a more useful campaign content
 case class SubscriberAggregations(name: String,email: String,category: String,num: Long)
 case class ProductAggregations(name: String,category: String,num: Long)
 
