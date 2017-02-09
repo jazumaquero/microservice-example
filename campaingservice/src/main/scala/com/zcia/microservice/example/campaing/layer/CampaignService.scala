@@ -2,7 +2,7 @@ package com.zcia.microservice.example.campaing.layer
 
 import akka.actor.Actor
 import akka.http.scaladsl.unmarshalling.Unmarshal
-
+import spray.json._
 object CampaignService {
   sealed case class Initialize()
   sealed case class CreateList(list: CampaignList)
@@ -14,6 +14,10 @@ object CampaignService {
   sealed case class SendCampaign(campaign: Campaign)
 }
 
+case class MemberSettings(category: String, num: Integer,best: Boolean)
+case class ContentSettings(category: String, num: Integer,best: Boolean , variableFormat : String,contentFormat : String)
+case class CampaignSettings(list: CampaignList, campaign: Campaign, memberSettings: MemberSettings, contentSettings: ContentSettings)
+
 class CampaignService(
                        serviceList: CampaignList,
                        serviceMembers: Seq[Member],
@@ -24,6 +28,15 @@ class CampaignService(
   protected implicit def materializer = System.materializer
   protected implicit def system = System.system
 
+  // TODO move all this to some settings case class
+  val category: String ="Hogar"
+  val numSubscribers: Integer = 10
+  val areBestSubscribers: Boolean = true
+  val numProducts: Integer = 5
+  val areBestProducts: Boolean = false
+  val variableContentFormat : String = "<li>%s</li>"
+  val campaignContentFormat : String = "<body><p>No se olviden de traer la siguiente lista de la compra</p><ul>%s</ul></body>"
+
   import CampaignService._
 
   override def receive: Receive = {
@@ -33,6 +46,7 @@ class CampaignService(
     case request: CreateList => {
       createList(request.list) map { response =>
         Unmarshal(response.entity).to[CampaignList] map { list =>
+          log.info(s"Created campaign list: $list")
           self ! new GetMembers(list)
         } recover {
           case _ => failed("Fail while un-marshalling created list")
@@ -42,13 +56,13 @@ class CampaignService(
       }
     }
     case request: GetMembers => {
-      // TODO obtain this val fron config/endpoint
-      val category: String =""
-      val numSubscribers: Integer = 10
-      val best: Boolean = true
-      getTopNSubscribers(category, numSubscribers, best) map { response =>
-        Unmarshal(response.entity).to[Seq[SubscriberAggregations]] map { subscribers =>
-          self ! new AddMembers(request.list, subscribers.map(s => new Member(s.email,"subscribed")))
+      getTopNSubscribers(category, numSubscribers, areBestSubscribers) map { response =>
+        // TODO fix this workaround that allows unmarshalling
+        Unmarshal(response.entity).to[String] map { payload =>
+          val subscribers_agg = payload.parseJson.convertTo[SubscriberAggregationsEmbedded]
+          val members : Seq[Member] = subscribers_agg.embedded.subscribersAgg.map(s => new Member(s.email,"subscribed"))
+          log.info(s"Recovered members: ${subscribers_agg.embedded.subscribersAgg}")
+          self ! new AddMembers(request.list, members)
         } recover {
           case _=> failed("Fail while un-marshalling list of subscribers")
         }
@@ -58,6 +72,7 @@ class CampaignService(
     }
     case request: AddMembers => {
       addMembersToList(request.list, request.members) map { response =>
+        log.info(s"Added members to campaign list: $request.members")
         self ! new CreateCampaign(request.list, getConfiguredCampaing(request.list))
       } recover {
         case _ => failed("Fail while adding members to list")
@@ -66,6 +81,7 @@ class CampaignService(
     case request: CreateCampaign => {
       createCampaign(request.campaign) map { response =>
         Unmarshal(response.entity).to[Campaign] map { campaign =>
+          log.info(s"Created campaign: $campaign")
           self ! new GetCampaignContent(campaign)
         } recover {
           case _ => failed("Fail while un-marshalling created campaign")
@@ -75,15 +91,13 @@ class CampaignService(
       }
     }
     case request: GetCampaignContent => {
-      // TODO obtain this val fron config/endpoint
-      val category: String =""
-      val numProducts: Integer = 5
-      val best: Boolean = false
-      getTopNProducts(category,numProducts,best) map { response =>
-        Unmarshal(response.entity).to[Seq[ProductAggregations]] map { products =>
-          // TODO obtain this val fron config/endpoint
-          val variableContent : String = products.map(p=>s"<li>${p.name}</li>").mkString("\n")
-          val content : String = s"<body><p>No se olviden de traer la siguiente lista de la compra</p><ul>$variableContent</ul></body>"
+      getTopNProducts(category,numProducts,areBestProducts) map { response =>
+        // TODO fix this workaround that allows unmarshalling
+        Unmarshal(response.entity).to[String] map { payload =>
+          val products_agg = payload.parseJson.convertTo[ProductAggregationsEmbedded]
+          val variableContent : String = products_agg.embedded.productAggs.map(p=>variableContentFormat.format(p.name)).mkString("\n")
+          val content : String = campaignContentFormat.format(variableContent)
+          log.info(s"Adding campaign content: $content")
           self ! new AddCampaignContent(request.campaign, new Content(content))
         } recover {
           case _ => failed("Fail while un-marshalling products")
@@ -103,6 +117,8 @@ class CampaignService(
       sendCampaing(request.campaign) map { response =>
         log.info("Success!")
         context.stop(self)
+      } recover {
+        case _ => failed("Fail while sending campaign to members")
       }
     }
   }

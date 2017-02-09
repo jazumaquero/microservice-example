@@ -17,8 +17,12 @@ case class Content(html: String)
 
 // Datalayer domain classes
 // TODO add href to allow a more useful campaign content
-case class SubscriberAggregations(name: String,email: String,category: String,num: Long)
-case class ProductAggregations(name: String,category: String,num: Long)
+case class SubscriberAggregation(name: String, email: String, category: String, num: Long)
+case class SubscriberAggregations(subscribersAgg: List[SubscriberAggregation])
+case class SubscriberAggregationsEmbedded(embedded: SubscriberAggregations)
+case class ProductAggregation(name: String, category: String, num: Long)
+case class ProductAggregations(productAggs: List[ProductAggregation])
+case class ProductAggregationsEmbedded(embedded:ProductAggregations)
 
 trait Protocol extends DefaultJsonProtocol {
   // Mailchimp Domain protocols
@@ -33,6 +37,10 @@ trait Protocol extends DefaultJsonProtocol {
   implicit val contentFormat = jsonFormat(Content, "html")
 
   // DataLayer Domain protocols
-  implicit val subscriberAggregationFormat = jsonFormat(SubscriberAggregations,"subscriberName","subscriberEmail","categoryName","num")
-  implicit val productAggregationFormat = jsonFormat(ProductAggregations,"productName","categoryName","num")
+  implicit val subscriberAggregationFormat = jsonFormat(SubscriberAggregation,"subscriberName","subscriberEmail","categoryName","num")
+  implicit val subscriberAggregationsSetFormat = jsonFormat(SubscriberAggregations, "subscribers_agg")
+  implicit val subscriberAggregationEmbeddedFormat = jsonFormat(SubscriberAggregationsEmbedded,"_embedded")
+  implicit val productAggregationFormat = jsonFormat(ProductAggregation,"productName","categoryName","num")
+  implicit val productAggregationsSetFormat = jsonFormat(ProductAggregations, "products_agg")
+  implicit val productAggregationEmbeddedFormat = jsonFormat(ProductAggregationsEmbedded,"_embedded")
 }

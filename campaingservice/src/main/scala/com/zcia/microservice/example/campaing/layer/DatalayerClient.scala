@@ -24,7 +24,7 @@ trait DatalayerClient extends BaseService with Protocol {
 
   protected def getTopNItem(category: String, n: Integer, best: Boolean, path: String): Future[HttpResponse] = {
     val sort: String = if (best) "desc" else "asc"
-    val queryParams: Seq[(String, String)] = Array("name" -> category, "page" -> "1", "size" -> s"$n", "sort" -> "num", "num.dir" -> sort)
+    val queryParams: Seq[(String, String)] = Array("name" -> category, "page" -> "0", "size" -> s"$n", "sort" -> "num", "num.dir" -> sort)
     sendToDataLayer(RequestBuilding.Get(Uri.from(path = path).withQuery(Query(queryParams: _*))))
   }
   protected def getTopNSubscribers(category: String, n: Integer, best: Boolean): Future[HttpResponse] = {
