@@ -2,8 +2,10 @@ package com.zcia.microservice.example.event.layer
 
 import spray.json.DefaultJsonProtocol
 
-case class Event(productId: Long, subscriberId: Long)
+case class BuyEvent(productId: Long, subscriberId: Long)
+case class LoginEvent(name:String, email:String)
 
 trait Protocol extends DefaultJsonProtocol {
-  implicit val eventFormatter = jsonFormat2(Event)
+  implicit val buyEventFormatter = jsonFormat2(BuyEvent)
+  implicit val loginEventFormatter = jsonFormat2(LoginEvent)
 }

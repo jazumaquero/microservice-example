@@ -17,13 +17,18 @@ trait DatalayerClient extends BaseService with Protocol {
 
   protected val client = Http(system).outgoingConnection(datalayerConfig.getString("host"), datalayerConfig.getInt("port"))
 
-  def getEvents(): Future[HttpResponse] = {
-    val request = RequestBuilding.Get("/events")//.withHeaders(headers.`Content-Type`(ContentTypes.`application/json`))
+  def requestToDataLayer(request: HttpRequest) : Future[HttpResponse] = {
     Source.single(request).via(client).runWith(Sink.head)
   }
+  def getEvents(): Future[HttpResponse] = {
+    requestToDataLayer(RequestBuilding.Get("/events"))
+  }
 
-  def createEvent(event: Event): Future[HttpResponse] = {
-    val request = RequestBuilding.Post("/events", event)//.withHeaders(headers.`Content-Type`(ContentTypes.`application/json`))
-    Source.single(request).via(client).runWith(Sink.head)
+  def createEvent(event: BuyEvent): Future[HttpResponse] = {
+    requestToDataLayer(RequestBuilding.Post("/events", event))
+  }
+
+  def createSubscriber(event: LoginEvent) : Future[HttpResponse] = {
+    requestToDataLayer(RequestBuilding.Post("/subscribers",event))
   }
 }
