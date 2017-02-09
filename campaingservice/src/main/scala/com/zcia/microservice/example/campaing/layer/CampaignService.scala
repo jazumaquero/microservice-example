@@ -4,6 +4,11 @@ import akka.actor.Actor
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import spray.json._
 
+case class MemberSettings(num: Integer, best: Boolean)
+case class ContentSettings(num: Integer, best: Boolean , variableFormat : String,contentFormat : String)
+case class CampaignSettings(list: CampaignList, campaign: Campaign, memberSettings: MemberSettings, contentSettings: ContentSettings, category: String)
+
+// TODO use single type of mutable message for any state
 object CampaignService {
   sealed case class Initialize()
   sealed case class CreateList(list: CampaignList)
@@ -15,10 +20,7 @@ object CampaignService {
   sealed case class SendCampaign(campaign: Campaign)
 }
 
-case class MemberSettings(num: Integer,best: Boolean)
-case class ContentSettings(num: Integer,best: Boolean , variableFormat : String,contentFormat : String)
-case class CampaignSettings(list: CampaignList, campaign: Campaign, memberSettings: MemberSettings, contentSettings: ContentSettings, category: String)
-
+// TODO MailchimpClient and DatalayerClient should be passed as attributes, in order to use singlenton instances (consider using actors to deal into a distributed fashion)
 class CampaignService(settings:CampaignSettings) extends Actor with MailchimpClient with DatalayerClient with System.LoggerExecutor {
   protected implicit def materializer = System.materializer
   protected implicit def system = System.system
@@ -43,7 +45,7 @@ class CampaignService(settings:CampaignSettings) extends Actor with MailchimpCli
     }
     case request: GetMembers => {
       getTopNSubscribers(settings.category, settings.memberSettings.num, settings.memberSettings.best) map { response =>
-        // TODO fix this workaround that allows unmarshalling
+        // FIXME this workaround that allows unmarshalling
         Unmarshal(response.entity).to[String] map { payload =>
           val subscribers_agg = payload.parseJson.convertTo[SubscriberAggregationsEmbedded]
           val members : Seq[Member] = subscribers_agg.embedded.subscribersAgg.map(s => new Member(s.email,"subscribed"))
@@ -78,7 +80,7 @@ class CampaignService(settings:CampaignSettings) extends Actor with MailchimpCli
     }
     case request: GetCampaignContent => {
       getTopNProducts(settings.category,settings.contentSettings.num,settings.contentSettings.best) map { response =>
-        // TODO fix this workaround that allows unmarshalling
+        // FIXME this workaround that allows unmarshalling
         Unmarshal(response.entity).to[String] map { payload =>
           val products_agg = payload.parseJson.convertTo[ProductAggregationsEmbedded]
           val variableContent : String = products_agg.embedded.productAggs.map(p=>settings.contentSettings.variableFormat.format(p.name)).mkString("\n")

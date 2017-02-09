@@ -2,10 +2,10 @@ package com.zcia.microservice.example.campaing.layer
 
 import akka.actor.Props
 
-
+// TODO transform into a service that accepts the campaign service settings as DTO
 object Main extends App with Config {
-  protected val contactConfig = mailchimpConfig.getConfig("contact")
-  protected val campaignConfig=mailchimpConfig.getConfig("campaign")
+  protected val contactConfig = serviceConfig.getConfig("contact")
+  protected val campaignConfig=serviceConfig.getConfig("campaign")
   protected val campaignDefaultsConfig=campaignConfig.getConfig("defaults")
   protected val campaignSettings=campaignConfig.getConfig("settings")
 
@@ -37,8 +37,8 @@ object Main extends App with Config {
   val contentSettings = new ContentSettings(
     serviceConfig.getInt("products.n") ,
     serviceConfig.getString("products.type").toLowerCase.equals("best"),
-    serviceConfig.getString("format.variable"),
-    serviceConfig.getString("format.content"))
+    campaignConfig.getString("content.format.variable"),
+    campaignConfig.getString("content.format.fixed"))
   val settings = new CampaignSettings(configuredList, configuredCampaing, memberSettings, contentSettings,serviceConfig.getString("category"))
 
   val campaignService = System.system.actorOf(Props(new CampaignService(settings)))
