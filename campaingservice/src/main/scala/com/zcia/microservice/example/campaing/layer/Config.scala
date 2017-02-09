@@ -8,4 +8,5 @@ trait Config {
   protected val httpConfig = config.getConfig("http")
   protected val datalayerConfig = config.getConfig("datalayer")
   protected val mailchimpConfig = config.getConfig("mailchimp")
+  protected val serviceConfig = config.getConfig("service")
 }

@@ -3,6 +3,7 @@ package com.zcia.microservice.example.campaing.layer
 import akka.actor.Actor
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import spray.json._
+
 object CampaignService {
   sealed case class Initialize()
   sealed case class CreateList(list: CampaignList)
@@ -14,34 +15,19 @@ object CampaignService {
   sealed case class SendCampaign(campaign: Campaign)
 }
 
-case class MemberSettings(category: String, num: Integer,best: Boolean)
-case class ContentSettings(category: String, num: Integer,best: Boolean , variableFormat : String,contentFormat : String)
-case class CampaignSettings(list: CampaignList, campaign: Campaign, memberSettings: MemberSettings, contentSettings: ContentSettings)
+case class MemberSettings(num: Integer,best: Boolean)
+case class ContentSettings(num: Integer,best: Boolean , variableFormat : String,contentFormat : String)
+case class CampaignSettings(list: CampaignList, campaign: Campaign, memberSettings: MemberSettings, contentSettings: ContentSettings, category: String)
 
-class CampaignService(
-                       serviceList: CampaignList,
-                       serviceMembers: Seq[Member],
-                       serviceCampaign: Campaign,
-                       serviceContent: Content
-                     ) extends Actor with MailchimpClient with DatalayerClient with System.LoggerExecutor {
-
+class CampaignService(settings:CampaignSettings) extends Actor with MailchimpClient with DatalayerClient with System.LoggerExecutor {
   protected implicit def materializer = System.materializer
   protected implicit def system = System.system
-
-  // TODO move all this to some settings case class
-  val category: String ="Hogar"
-  val numSubscribers: Integer = 10
-  val areBestSubscribers: Boolean = true
-  val numProducts: Integer = 5
-  val areBestProducts: Boolean = false
-  val variableContentFormat : String = "<li>%s</li>"
-  val campaignContentFormat : String = "<body><p>No se olviden de traer la siguiente lista de la compra</p><ul>%s</ul></body>"
 
   import CampaignService._
 
   override def receive: Receive = {
     case request: Initialize => {
-      self ! new CreateList(serviceList)
+      self ! new CreateList(settings.list)
     }
     case request: CreateList => {
       createList(request.list) map { response =>
@@ -56,7 +42,7 @@ class CampaignService(
       }
     }
     case request: GetMembers => {
-      getTopNSubscribers(category, numSubscribers, areBestSubscribers) map { response =>
+      getTopNSubscribers(settings.category, settings.memberSettings.num, settings.memberSettings.best) map { response =>
         // TODO fix this workaround that allows unmarshalling
         Unmarshal(response.entity).to[String] map { payload =>
           val subscribers_agg = payload.parseJson.convertTo[SubscriberAggregationsEmbedded]
@@ -91,12 +77,12 @@ class CampaignService(
       }
     }
     case request: GetCampaignContent => {
-      getTopNProducts(category,numProducts,areBestProducts) map { response =>
+      getTopNProducts(settings.category,settings.contentSettings.num,settings.contentSettings.best) map { response =>
         // TODO fix this workaround that allows unmarshalling
         Unmarshal(response.entity).to[String] map { payload =>
           val products_agg = payload.parseJson.convertTo[ProductAggregationsEmbedded]
-          val variableContent : String = products_agg.embedded.productAggs.map(p=>variableContentFormat.format(p.name)).mkString("\n")
-          val content : String = campaignContentFormat.format(variableContent)
+          val variableContent : String = products_agg.embedded.productAggs.map(p=>settings.contentSettings.variableFormat.format(p.name)).mkString("\n")
+          val content : String = settings.contentSettings.contentFormat.format(variableContent)
           log.info(s"Adding campaign content: $content")
           self ! new AddCampaignContent(request.campaign, new Content(content))
         } recover {
@@ -129,6 +115,6 @@ class CampaignService(
   }
 
   def getConfiguredCampaing(list: CampaignList) = {
-    serviceCampaign.copy(recipients =  new Recipient(list.id))
+    settings.campaign.copy(recipients =  new Recipient(list.id))
   }
 }

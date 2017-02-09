@@ -5,9 +5,9 @@ import akka.actor.Props
 
 object Main extends App with Config {
   protected val contactConfig = mailchimpConfig.getConfig("contact")
-  protected val campaingConfig=mailchimpConfig.getConfig("campaign")
-  protected val campaingDefaultsConfig=campaingConfig.getConfig("defaults")
-  protected val campaingSettings=campaingConfig.getConfig("settings")
+  protected val campaignConfig=mailchimpConfig.getConfig("campaign")
+  protected val campaignDefaultsConfig=campaignConfig.getConfig("defaults")
+  protected val campaignSettings=campaignConfig.getConfig("settings")
 
   val configuredList: CampaignList =  {
     val contact = new Contact(contactConfig.getString("company"),
@@ -17,27 +17,30 @@ object Main extends App with Config {
       contactConfig.getString("zip"),
       contactConfig.getString("country")
     )
-    val defaults = new CampaignDefaults(campaingDefaultsConfig.getString("from_name"),
-      campaingDefaultsConfig.getString("from_email"),
-      campaingDefaultsConfig.getString("subject"),
-      campaingDefaultsConfig.getString("language")
+    val defaults = new CampaignDefaults(campaignDefaultsConfig.getString("from_name"),
+      campaignDefaultsConfig.getString("from_email"),
+      campaignDefaultsConfig.getString("subject"),
+      campaignDefaultsConfig.getString("language")
     )
-    new CampaignList("foo", campaingConfig.getString("name"), contact, campaingConfig.getString("permission_reminder"), defaults )
+    new CampaignList("foo", campaignConfig.getString("name"), contact, campaignConfig.getString("permission_reminder"), defaults )
   }
-
-  val configuredMembers: Seq[Member] = Seq()
-
   val configuredCampaing: Campaign = {
-    val settings = new Settings(subject_line=campaingSettings.getString("subject_line"),
-      reply_to=campaingSettings.getString("reply_to"),
-      from_name=campaingSettings.getString("from_name")
+    val settings = new Settings(subject_line=campaignSettings.getString("subject_line"),
+      reply_to=campaignSettings.getString("reply_to"),
+      from_name=campaignSettings.getString("from_name")
     )
-    new Campaign("", new Recipient(""), campaingConfig.getString("type"), settings)
+    new Campaign("", new Recipient(""), campaignConfig.getString("type"), settings)
   }
 
-  val configuredContent = new Content("<p>Este correo se autodestruirá en 30 segundos....</p>")
+  val memberSettings = new MemberSettings(serviceConfig.getInt("subscribers.n") ,    serviceConfig.getString("subscribers.type").toLowerCase.equals("best")  )
 
-  val campaignService = System.system.actorOf(Props(new CampaignService(configuredList,configuredMembers,configuredCampaing,configuredContent)))
+  val contentSettings = new ContentSettings(
+    serviceConfig.getInt("products.n") ,
+    serviceConfig.getString("products.type").toLowerCase.equals("best"),
+    serviceConfig.getString("format.variable"),
+    serviceConfig.getString("format.content"))
+  val settings = new CampaignSettings(configuredList, configuredCampaing, memberSettings, contentSettings,serviceConfig.getString("category"))
 
+  val campaignService = System.system.actorOf(Props(new CampaignService(settings)))
   campaignService ! new CampaignService.Initialize()
 }
