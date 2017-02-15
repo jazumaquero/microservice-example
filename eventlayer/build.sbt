@@ -1,5 +1,5 @@
 name := "eventlayer"
-version := "1.0"
+version := "0.0.1-SNAPSHOT"
 scalaVersion := "2.11.8"
 scalacOptions := Seq("-unchecked", "-feature", "-deprecation", "-encoding", "utf8")
 
@@ -16,6 +16,7 @@ libraryDependencies ++= {
     "com.typesafe.akka"   %%  "akka-testkit"  % akkaV   % "test",
     "com.typesafe.akka"   %%  "akka-http-testkit" % akkaV,
     "org.scalatest"       %%  "scalatest"     % scalaTestV % "test",
+    "org.scalamock" %% "scalamock-scalatest-support" % "3.4.2" % "test",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.1.0",
     "ch.qos.logback" % "logback-classic" % "1.1.3",
     "org.slf4j" % "slf4j-nop" % "1.6.4"

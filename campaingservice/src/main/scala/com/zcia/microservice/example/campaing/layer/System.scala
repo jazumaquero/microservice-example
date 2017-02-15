@@ -1,7 +1,7 @@
 package com.zcia.microservice.example.campaing.layer
 
 import akka.actor.ActorSystem
-import akka.event.Logging
+import akka.event.{Logging, LoggingAdapter}
 import akka.stream.ActorMaterializer
 
 object System {
@@ -10,6 +10,6 @@ object System {
 
   trait LoggerExecutor extends BaseComponent {
     protected implicit val executor = system.dispatcher
-    protected implicit val log = Logging(system, "app")
+    protected implicit val log : LoggingAdapter = Logging(system, "app")
   }
 }

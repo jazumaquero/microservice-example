@@ -1,5 +1,5 @@
 name := "campaingservice"
-version := "1.0"
+version := "0.0.1-SNAPSHOT"
 scalaVersion := "2.11.8"
 scalacOptions := Seq("-unchecked", "-feature", "-deprecation", "-encoding", "utf8")
 
