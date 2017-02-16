@@ -1,6 +1,6 @@
 package com.zcia.microservice.example.campaing.layer
 
-import akka.actor.{Actor, ActorLogging, ActorSystem}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.client.RequestBuilding
 import akka.http.scaladsl.client.RequestBuilding._
@@ -41,100 +41,23 @@ class MailchimpActor extends Actor with ActorLogging with Protocol with Config {
   override def receive: Receive = {
     // Create list
     case event: MailchimpActor.CreateList => {
-      log.debug(s"Creating list with given parameters: ${event.list}")
-      sendToMailchimp(RequestBuilding.Post(s"/$version/lists", event.list)) map { response =>
-        Unmarshal(response.entity).to[CampaignList] map { list =>
-          log.info(s"Created campaign list: $list")
-          sender ! list
-        } recover {
-          case _ => {
-            log.error("Error while unmarshalling received campaign list.")
-            sender ! MailchimpActor.Error
-          }
-        }
-      } recover {
-        case _ => {
-          log.error("Error while requesting for a new campaign list.")
-          sender ! MailchimpActor.Error
-        }
-      }
-    }
+      createList(sender, event.list)
+     }
     // Add member to some list
     case event: MailchimpActor.AddMembers => {
-      log.debug(s"Adding members list with id ${event.listId}: ${event.members}")
-      sendToMailchimp(RequestBuilding.Post(s"/$version/lists/${event.listId}", new Members(event.members))) map { response =>
-        response.status match {
-          case Created | OK => {
-            log.info(s"Added members to list ${event.listId}.")
-            sender ! new MailchimpActor.AddedMembers(event.listId)
-          }
-          case _ => {
-            log.error(s"Error while processing adding members list: ${response}")
-            sender ! MailchimpActor.Error
-          }
-        }
-      } recover {
-        case _ => {
-          log.error("Error while requesting for adding members list.")
-          sender ! MailchimpActor.Error
-        }
-      }
+      addMembers(sender,event.listId,event.members)
     }
     // Create campaign
     case event: MailchimpActor.CreateCampaign => {
-      log.debug(s"Creating campaign with list id ${event.listId}: ${event.campaign}")
-      sendToMailchimp(RequestBuilding.Post(s"/$version/campaigns", event.campaign)) map { response =>
-        Unmarshal(response.entity).to[Campaign] map { campaign =>
-          log.info(s"Created campaign: $campaign")
-          sender ! campaign
-        } recover {
-          case _ => {
-            log.error("Error while unmarshalling created campaign")
-            sender ! MailchimpActor.Error
-          }
-        }
-      } recover {
-        case _ => {
-          log.error("Error while request creating a new campaign.")
-          sender ! MailchimpActor.Error
-        }
-      }
+      createCampaign(sender, event.listId, event.campaign)
     }
     // Adding content to some created campaign
     case event: MailchimpActor.AddCampaignContent => {
-      log.debug(s"Adding content to campaign ${event.campaignId} : ${event.content}")
-      sendToMailchimp(RequestBuilding.Put(s"/$version/campaigns/${event.campaignId}/content", event.content)) map { response =>
-        response.status match {
-          case OK | Created => sender ! new MailchimpActor.AddedCampaignContent(event.campaignId)
-          case _ => {
-            log.error(s"Error while processing for adding content to campaign: ${response}")
-            sender ! MailchimpActor.Error
-          }
-        }
-      } recover {
-        case _ => {
-          log.error(s"Error while requesting for adding content to campaign: ${event.campaignId}")
-          sender ! MailchimpActor.Error
-        }
-      }
+      addCampaignContent(sender, event.campaignId, event.content)
     }
     // Send some created campaign
     case event: MailchimpActor.SendCampaign => {
-      log.debug(s"Sending campaign ${event.campaignId}!")
-      sendToMailchimp(RequestBuilding.Post(s"/$version/campaing/${event.campaignId}/actions/send")) map { response =>
-        response.status match {
-          case OK => sender ! MailchimpActor.SentCampaign(event.campaignId)
-          case _ => {
-            log.error(s"Error while processing for sending campaign: ${response}")
-            sender ! MailchimpActor.Error
-          }
-        }
-      } recover {
-        case _ => {
-          log.error(s"Error while requesting for sending campaign: ${event.campaignId}")
-          sender ! MailchimpActor.Error
-        }
-      }
+      sendCampaign(sender, event.campaignId)
     }
     // Unknown message won't be accepted!
     case _ => {
@@ -147,5 +70,102 @@ class MailchimpActor extends Actor with ActorLogging with Protocol with Config {
     val credentials = BasicHttpCredentials("apikey", apiKey)
     log.debug(s"Requesting following: $request")
     Source.single(request ~> addCredentials(credentials)).via(connection).runWith(Sink.head)
+  }
+
+  protected def createList(requestor: ActorRef, list: CampaignList): Unit = {
+    log.debug(s"Creating list with given parameters: $list")
+    sendToMailchimp(RequestBuilding.Post(s"/$version/lists", list)) map { response =>
+      Unmarshal(response.entity).to[CampaignList] map { list =>
+        log.info(s"Created campaign list: $list")
+        requestor ! list
+      } recover {
+        case _ => {
+          log.error("Error while unmarshalling received campaign list.")
+          requestor ! MailchimpActor.Error
+        }
+      }
+    } recover {
+      case _ => {
+        log.error("Error while requesting for a new campaign list.")
+        requestor ! MailchimpActor.Error
+      }
+    }
+  }
+
+  protected def addMembers(requestor: ActorRef, listId: String,members: Seq[Member] ): Unit = {
+    log.debug(s"Adding members list with id $listId: ${members}")
+    sendToMailchimp(RequestBuilding.Post(s"/$version/lists/$listId", new Members(members))) map { response =>
+      response.status match {
+        case Created | OK => {
+          log.info(s"Added members to list $listId.")
+          requestor ! new MailchimpActor.AddedMembers(listId)
+        }
+        case _ => {
+          log.error(s"Error while processing adding members list: ${response}")
+          requestor ! MailchimpActor.Error
+        }
+      }
+    } recover {
+      case _ => {
+        log.error("Error while requesting for adding members list.")
+        requestor ! MailchimpActor.Error
+      }
+    }
+  }
+
+  protected def createCampaign(requestor: ActorRef, listId: String, campaign: Campaign) : Unit = {
+    log.debug(s"Creating campaign with list id $listId: ${campaign}")
+    sendToMailchimp(RequestBuilding.Post(s"/$version/campaigns", campaign)) map { response =>
+      Unmarshal(response.entity).to[Campaign] map { campaign =>
+        log.info(s"Created campaign: $campaign")
+        requestor ! campaign
+      } recover {
+        case _ => {
+          log.error("Error while unmarshalling created campaign")
+          requestor ! MailchimpActor.Error
+        }
+      }
+    } recover {
+      case _ => {
+        log.error("Error while request creating a new campaign.")
+        requestor ! MailchimpActor.Error
+      }
+    }
+  }
+
+  protected def addCampaignContent(requestor: ActorRef, campaignId: String, content: Content) : Unit = {
+    log.debug(s"Adding content to campaign $campaignId : ${content}")
+    sendToMailchimp(RequestBuilding.Put(s"/$version/campaigns/$campaignId/content", content)) map { response =>
+      response.status match {
+        case OK | Created => sender ! new MailchimpActor.AddedCampaignContent(campaignId)
+        case _ => {
+          log.error(s"Error while processing for adding content to campaign: ${response}")
+          sender ! MailchimpActor.Error
+        }
+      }
+    } recover {
+      case _ => {
+        log.error(s"Error while requesting for adding content to campaign: $campaignId")
+        sender ! MailchimpActor.Error
+      }
+    }
+  }
+
+  protected def sendCampaign(requestor: ActorRef, campaignId: String) : Unit = {
+    log.debug(s"Sending campaign $campaignId!")
+    sendToMailchimp(RequestBuilding.Post(s"/$version/campaing/$campaignId/actions/send")) map { response =>
+      response.status match {
+        case OK => sender ! MailchimpActor.SentCampaign(campaignId)
+        case _ => {
+          log.error(s"Error while processing for sending campaign: ${response}")
+          requestor ! MailchimpActor.Error
+        }
+      }
+    } recover {
+      case _ => {
+        log.error(s"Error while requesting for sending campaign: $campaignId")
+        requestor ! MailchimpActor.Error
+      }
+    }
   }
 }
