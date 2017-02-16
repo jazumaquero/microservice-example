@@ -7,9 +7,10 @@ import scala.concurrent.ExecutionContextExecutor
 object CampaignActor{
   case object Initialize
   case object Idle
-  case class State(members: Option[Seq[Member]]=None, content: Option[Content]=None, list: Option[CampaignList]=None , campaign: Option[Campaign]=None)
+  case class State(members: Option[Seq[Member]]=None, content: Option[Content]=None, list: Option[CampaignList]=None , campaign: Option[Campaign]=None, hasMember : Boolean = false, hasContent: Boolean = false)
 }
 
+// TODO asses to move to FSM instead
 class CampaignActor(mailchimp: ActorRef, datalayer: ActorRef, settings:CampaignSettings) extends Actor with ActorLogging{
 
   var state = new CampaignActor.State()
@@ -26,11 +27,15 @@ class CampaignActor(mailchimp: ActorRef, datalayer: ActorRef, settings:CampaignS
     case CampaignActor.Idle => {
       log.info(s"State updated: $state")
       if(state.members.nonEmpty && state.content.nonEmpty && state.list.nonEmpty ) {
-        // TODO review
         if(state.campaign.isEmpty){
           mailchimp ! new MailchimpActor.CreateCampaign(state.list.get.id,settings.campaign)
-        } else {
           mailchimp ! new MailchimpActor.AddMembers(state.list.get.id, state.members.get)
+        } else {
+          if(state.hasContent && state.hasMember) {
+            mailchimp ! new MailchimpActor.SendCampaign(state.campaign.get.id)
+          } else if (!state.hasContent) {
+            mailchimp ! new MailchimpActor.AddCampaignContent(state.campaign.get.id,state.content.get)
+          }
         }
       }
     }
@@ -51,13 +56,15 @@ class CampaignActor(mailchimp: ActorRef, datalayer: ActorRef, settings:CampaignS
     }
     case campaign: Campaign => {
       state=state.copy(campaign=Some(campaign))
-      mailchimp ! new MailchimpActor.AddCampaignContent(campaign.id,state.content.get)
+      self ! CampaignActor.Idle
     }
     case event: MailchimpActor.AddedMembers => {
-      mailchimp ! new MailchimpActor.CreateCampaign(event.listId,settings.campaign)
+      state = state.copy(hasMember = true)
+      self ! CampaignActor.Idle
     }
     case event: MailchimpActor.AddedCampaignContent => {
-      mailchimp ! new MailchimpActor.SendCampaign(event.campaignId)
+      state = state.copy(hasContent = true)
+      self ! CampaignActor.Idle
     }
     case event: MailchimpActor.SentCampaign => {
       log.info("Success")
