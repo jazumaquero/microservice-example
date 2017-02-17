@@ -36,64 +36,56 @@ class DataLayerActor extends Actor with ActorLogging with Protocol with Config {
 
   override def receive: Receive = {
     // Request for top n values for some aspect or concept
-    case event: DataLayerActor.TopNRequest => {
+    case event: DataLayerActor.TopNRequest =>
       event.item match {
-        case DataLayerActor.Products => getTopProducts(sender, event.category, event.n, event.best)
-        case DataLayerActor.Subscribers => getTopSubscribers(sender, event.category, event.n, event.best)
-      }
+        case DataLayerActor.Products => topProducts(sender, event.category, event.n, event.best)
+        case DataLayerActor.Subscribers => topSubscribers(sender, event.category, event.n, event.best)
     }
     // Other cases won't be supported!
-    case _ => {
+    case _ =>
       log.warning("Unknown request")
       sender ! DataLayerActor.Error
-    }
   }
 
   private def getSort(isBest: Boolean) : String = if(isBest) "desc" else "asc"
 
   private def getQueryParams(category: String, n: Integer, best: Boolean)= Array("name" -> category, "page" -> "0", "size" -> s"$n", "sort" -> "num", "num.dir" -> getSort(best))
 
-  protected def getTopProducts(requestor: ActorRef, category: String, n: Integer, best: Boolean) : Unit = {
+  protected def topProducts(requestor: ActorRef, category: String, n: Integer, best: Boolean) : Unit = {
     val path = "/products_agg/search/findByCategoryName"
     val params = getQueryParams(category,n,best)
     sendToDataLayer(RequestBuilding.Get(Uri.from(path = path).withQuery(Query(params: _*)))) map { response =>
-      log.info(s"Received :${response}")
+      log.info(s"Received :$response")
       Unmarshal(response.entity).to[String] map { payload =>
-        val productsAggregations = payload.parseJson.convertTo[ProductAggregationsEmbedded]
-        requestor ! productsAggregations
+        requestor ! payload.parseJson.convertTo[ProductAggregationsEmbedded]
       } recover {
-        case _ => {
+        case _ =>
           log.error(s"Error while unmarshalling product aggregations ${response.entity}")
           requestor ! DataLayerActor.Error
-        }
       }
     } recover {
-      case _ => {
+      case _ =>
         log.error(s"Error while requesting for product aggregations")
         requestor ! DataLayerActor.Error
-      }
     }
   }
 
-  protected def getTopSubscribers(requestor: ActorRef, category: String, n: Integer, best: Boolean) : Unit = {
+  protected def topSubscribers(requestor: ActorRef, category: String, n: Integer, best: Boolean) : Unit = {
     val path = "/subscribers_agg/search/findByCategoryName"
     val params = getQueryParams(category,n,best)
     sendToDataLayer(RequestBuilding.Get(Uri.from(path = path).withQuery(Query(params: _*)))) map { response =>
-      log.info(s"Received :${response}")
+      log.info(s"Received :$response")
       Unmarshal(response.entity).to[String] map { payload =>
-        val subscribersAggregations = payload.parseJson.convertTo[SubscriberAggregationsEmbedded]
-        requestor ! subscribersAggregations
+        requestor ! payload.parseJson.convertTo[SubscriberAggregationsEmbedded]
       } recover {
-        case _ => {
+        case _ =>
           log.error(s"Error while unmarshalling subscribers aggregations ${response.entity}")
           requestor ! DataLayerActor.Error
-        }
       }
     } recover {
-      case _ => {
+      case _ =>
         log.error(s"Error while requesting for subscribers aggregations")
         requestor ! DataLayerActor.Error
-      }
     }
   }
 

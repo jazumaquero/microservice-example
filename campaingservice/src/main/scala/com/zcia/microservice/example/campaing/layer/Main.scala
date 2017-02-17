@@ -41,8 +41,6 @@ object Main extends App with Config {
     campaignConfig.getString("content.format.fixed"))
   val settings = new CampaignSettings(configuredList, configuredCampaing, memberSettings, contentSettings,serviceConfig.getString("category"))
 
- // val campaignService = System.system.actorOf(Props(new CampaignService(settings)))
-  //campaignService ! new CampaignService.Initialize()
   val mailchimp = System.system.actorOf(Props[MailchimpActor],"mailchimp")
   val datalayer = System.system.actorOf(Props[DataLayerActor],"datalayer")
   val campaign = System.system.actorOf(Props(new CampaignActor(mailchimp,datalayer,settings)),"campaign")
