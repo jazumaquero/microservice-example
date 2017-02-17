@@ -11,10 +11,12 @@ case class CampaignSettings(list: CampaignList, campaign: Campaign, memberSettin
 object CampaignActor{
   case object Initialize
   case object Idle
-  case class State(members: Option[Seq[Member]]=None, content: Option[Content]=None, list: Option[CampaignList]=None , campaign: Option[Campaign]=None, hasMember : Boolean = false, hasContent: Boolean = false)
+  case class State(members: Option[Seq[Member]]=None, content: Option[Content]=None, list: Option[CampaignList]=None , campaign: Option[Campaign]=None, hasMember : Boolean = false, hasContent: Boolean = false) {
+    def ready : Boolean = members.nonEmpty && content.nonEmpty && campaign.nonEmpty && hasMember && hasContent
+  }
 }
 
-// TODO asses to move to FSM instead
+
 class CampaignActor(mailchimp: ActorRef, datalayer: ActorRef, settings:CampaignSettings) extends Actor with ActorLogging{
 
   var state = CampaignActor.State()
@@ -29,18 +31,7 @@ class CampaignActor(mailchimp: ActorRef, datalayer: ActorRef, settings:CampaignS
       mailchimp ! MailchimpActor.CreateList(settings.list)
     case CampaignActor.Idle =>
       log.info(s"State updated: $state")
-      if(state.members.nonEmpty && state.content.nonEmpty && state.list.nonEmpty ) {
-        if(state.campaign.isEmpty){
-          mailchimp ! MailchimpActor.CreateCampaign(state.list.get.id,settings.campaign)
-          mailchimp ! MailchimpActor.AddMembers(state.list.get.id, state.members.get)
-        } else {
-          if(state.hasContent && state.hasMember) {
-            mailchimp ! MailchimpActor.SendCampaign(state.campaign.get.id)
-          } else if (!state.hasContent) {
-            mailchimp ! MailchimpActor.AddCampaignContent(state.campaign.get.id,state.content.get)
-          }
-        }
-      }
+      if(state.ready) mailchimp ! MailchimpActor.SendCampaign(state.campaign.get.id)
     case subscribers: SubscriberAggregationsEmbedded =>
       val members = subscribers.embedded.subscribersAgg.map(s => Member(s.email, "subscribed"))
       log.info(s"Campaign members ready: $members")
@@ -55,20 +46,23 @@ class CampaignActor(mailchimp: ActorRef, datalayer: ActorRef, settings:CampaignS
     case list: CampaignList =>
       log.info(s"Campaign list ready: $list")
       state=state.copy(list=Some(list))
+      mailchimp ! MailchimpActor.CreateCampaign(state.list.get.id,settings.campaign)
       self ! CampaignActor.Idle
     case campaign: Campaign =>
       log.info(s"Campaign  ready: $campaign")
       state=state.copy(campaign=Some(campaign))
+      mailchimp ! MailchimpActor.AddMembers(state.list.get.id, state.members.get)
       self ! CampaignActor.Idle
-    case event: MailchimpActor.AddedMembers =>
+    case MailchimpActor.AddedMembers =>
       log.info(s"Campaign members added!")
       state = state.copy(hasMember = true)
+      mailchimp ! MailchimpActor.AddCampaignContent(state.campaign.get.id,state.content.get)
       self ! CampaignActor.Idle
-    case event: MailchimpActor.AddedCampaignContent =>
+    case MailchimpActor.AddedCampaignContent =>
       log.info(s"Campaign content added!")
       state = state.copy(hasContent = true)
       self ! CampaignActor.Idle
-    case event: MailchimpActor.SentCampaign =>
+    case MailchimpActor.SentCampaign =>
       log.info("Success while sending campaign")
       context.stop(self)
     case _ =>

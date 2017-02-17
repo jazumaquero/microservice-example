@@ -55,7 +55,8 @@ class DataLayerActor extends Actor with ActorLogging with Protocol with Config {
     val path = "/products_agg/search/findByCategoryName"
     val params = getQueryParams(category,n,best)
     sendToDataLayer(RequestBuilding.Get(Uri.from(path = path).withQuery(Query(params: _*)))) map { response =>
-      log.info(s"Received :$response")
+      log.info(s"Response for request top products :$response")
+      // FIXME: implement support to HAL+JSON content-type to avoid this workaround
       Unmarshal(response.entity).to[String] map { payload =>
         requestor ! payload.parseJson.convertTo[ProductAggregationsEmbedded]
       } recover {
@@ -74,7 +75,8 @@ class DataLayerActor extends Actor with ActorLogging with Protocol with Config {
     val path = "/subscribers_agg/search/findByCategoryName"
     val params = getQueryParams(category,n,best)
     sendToDataLayer(RequestBuilding.Get(Uri.from(path = path).withQuery(Query(params: _*)))) map { response =>
-      log.info(s"Received :$response")
+      log.info(s"Response for request top subscribers :$response")
+      // FIXME: implement support to HAL+JSON content-type to avoid this workaround
       Unmarshal(response.entity).to[String] map { payload =>
         requestor ! payload.parseJson.convertTo[SubscriberAggregationsEmbedded]
       } recover {

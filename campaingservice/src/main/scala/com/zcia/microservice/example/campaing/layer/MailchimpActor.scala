@@ -17,12 +17,12 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 object MailchimpActor {
   sealed case class CreateList(list: CampaignList)
   sealed case class AddMembers(listId: String, members: Seq[Member])
-  sealed case class AddedMembers(listId: String)
+  case object AddedMembers
   sealed case class CreateCampaign(listId: String, campaign: Campaign)
   sealed case class AddCampaignContent(campaignId: String, content: Content)
-  sealed case class AddedCampaignContent(campaignId: String)
+  case object AddedCampaignContent
   sealed case class SendCampaign(campaignId: String)
-  sealed case class SentCampaign(campaignId: String)
+  case object SentCampaign
   case object Error
 }
 
@@ -30,8 +30,8 @@ class MailchimpActor extends Actor with ActorLogging with Protocol with Config {
 
   import MailchimpActor._
   protected val host: String = mailchimpConfig.getString("host")
-  protected val version = mailchimpConfig.getString("version")
-  protected val apiKey = mailchimpConfig.getString("apikey")
+  protected val version : String = mailchimpConfig.getString("version")
+  protected val apiKey : String = mailchimpConfig.getString("apikey")
 
   protected val system: ActorSystem = context.system
   protected implicit val executor : ExecutionContextExecutor = context.dispatcher
@@ -59,6 +59,8 @@ class MailchimpActor extends Actor with ActorLogging with Protocol with Config {
   protected def createList(requestor: ActorRef, list: CampaignList): Unit = {
     log.debug(s"Creating list with given parameters: $list")
     sendToMailchimp(RequestBuilding.Post(s"/$version/lists", list)) map { response =>
+      log.debug(s"Response for creating campaign list: $response")
+      log.debug(s"Received response for create list: $response")
       Unmarshal(response.entity).to[CampaignList] map { list =>
         log.info(s"Created campaign list: $list")
         requestor ! list
@@ -77,10 +79,11 @@ class MailchimpActor extends Actor with ActorLogging with Protocol with Config {
   protected def addMembers(requestor: ActorRef, listId: String,members: Seq[Member] ): Unit = {
     log.debug(s"Adding members list with id $listId: $members")
     sendToMailchimp(RequestBuilding.Post(s"/$version/lists/$listId", Members(members))) map { response =>
+      log.debug(s"Response for adding members to list: $response")
       response.status match {
         case Created | OK =>
           log.info(s"Added members to list $listId.")
-          requestor ! MailchimpActor.AddedMembers(listId)
+          requestor ! MailchimpActor.AddedMembers
         case _ =>
           log.error(s"Error while processing adding members list: $response")
           requestor ! MailchimpActor.Error
@@ -94,7 +97,9 @@ class MailchimpActor extends Actor with ActorLogging with Protocol with Config {
 
   protected def createCampaign(requestor: ActorRef, listId: String, campaign: Campaign) : Unit = {
     log.debug(s"Creating campaign with list id $listId: $campaign")
-    sendToMailchimp(RequestBuilding.Post(s"/$version/campaigns", campaign)) map { response =>
+    val requestedCampaign = campaign.copy(recipients = Recipient(listId))
+    sendToMailchimp(RequestBuilding.Post(s"/$version/campaigns", requestedCampaign)) map { response =>
+      log.debug(s"Response for creating campaign: $response")
       Unmarshal(response.entity).to[Campaign] map { campaign =>
         log.info(s"Created campaign: $campaign")
         requestor ! campaign
@@ -113,24 +118,26 @@ class MailchimpActor extends Actor with ActorLogging with Protocol with Config {
   protected def addCampaignContent(requestor: ActorRef, campaignId: String, content: Content) : Unit = {
     log.debug(s"Adding content to campaign $campaignId : $content")
     sendToMailchimp(RequestBuilding.Put(s"/$version/campaigns/$campaignId/content", content)) map { response =>
+      log.debug(s"Response for adding campaign content: $response")
       response.status match {
-        case OK | Created => sender ! MailchimpActor.AddedCampaignContent(campaignId)
+        case OK | Created => requestor ! MailchimpActor.AddedCampaignContent
         case _ =>
           log.error(s"Error while processing for adding content to campaign: $response")
-          sender ! MailchimpActor.Error
+          requestor ! MailchimpActor.Error
       }
     } recover {
       case _ =>
         log.error(s"Error while requesting for adding content to campaign: $campaignId")
-        sender ! MailchimpActor.Error
+        requestor ! MailchimpActor.Error
     }
   }
 
   protected def sendCampaign(requestor: ActorRef, campaignId: String) : Unit = {
     log.debug(s"Sending campaign $campaignId!")
     sendToMailchimp(RequestBuilding.Post(s"/$version/campaing/$campaignId/actions/send")) map { response =>
+      log.debug(s"Response for request sending campaign: $response")
       response.status match {
-        case OK => sender ! MailchimpActor.SentCampaign(campaignId)
+        case OK => requestor ! MailchimpActor.SentCampaign
         case _ =>
           log.error(s"Error while processing for sending campaign: $response")
           requestor ! MailchimpActor.Error
