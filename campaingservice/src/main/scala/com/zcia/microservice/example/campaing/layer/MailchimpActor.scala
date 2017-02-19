@@ -4,7 +4,6 @@ import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.client.RequestBuilding
 import akka.http.scaladsl.client.RequestBuilding._
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
@@ -13,6 +12,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
+
 
 object MailchimpActor {
   sealed case class CreateList(list: CampaignList)
@@ -26,12 +26,9 @@ object MailchimpActor {
   case object Error
 }
 
-class MailchimpActor extends Actor with ActorLogging with Protocol with Config {
+class MailchimpActor extends Actor with ActorLogging with MailchimpProtocol with MailchimpConfig {
 
   import MailchimpActor._
-  protected val host: String = mailchimpConfig.getString("host")
-  protected val version : String = mailchimpConfig.getString("version")
-  protected val apiKey : String = mailchimpConfig.getString("apikey")
 
   protected val system: ActorSystem = context.system
   protected implicit val executor : ExecutionContextExecutor = context.dispatcher

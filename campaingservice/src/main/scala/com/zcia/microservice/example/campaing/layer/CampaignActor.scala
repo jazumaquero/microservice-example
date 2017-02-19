@@ -4,9 +4,6 @@ import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem}
 
 import scala.concurrent.ExecutionContextExecutor
 
-case class MemberSettings(num: Integer, best: Boolean)
-case class ContentSettings(num: Integer, best: Boolean , variableFormat : String,contentFormat : String)
-case class CampaignSettings(list: CampaignList, campaign: Campaign, memberSettings: MemberSettings, contentSettings: ContentSettings, category: String)
 
 object CampaignActor{
   case object Initialize
@@ -16,13 +13,11 @@ object CampaignActor{
   }
 }
 
-
-class CampaignActor(mailchimp: ActorRef, datalayer: ActorRef, settings:CampaignSettings) extends Actor with ActorLogging{
-
-  var state = CampaignActor.State()
-
+class CampaignActor(mailchimp: ActorRef, datalayer: ActorRef, settings:CampaignSettings) extends Actor with ActorLogging {
   protected val system: ActorSystem = context.system
   protected implicit val executor : ExecutionContextExecutor = context.dispatcher
+
+  protected var state = CampaignActor.State()
 
   override def receive: Receive = {
     case CampaignActor.Initialize =>

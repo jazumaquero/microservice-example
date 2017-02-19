@@ -3,7 +3,6 @@ package com.zcia.microservice.example.campaing.layer
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.client.RequestBuilding
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, Uri}
 import akka.http.scaladsl.unmarshalling.Unmarshal
@@ -19,14 +18,12 @@ object DataLayerActor {
   case object Products extends Item
   case object Subscribers extends Item
   case class TopNRequest(category: String, n: Integer, best: Boolean, item: Item)
-  object Error
+  case object Error
 }
 
+class DataLayerActor extends Actor with ActorLogging with DataLayerProtocol with DataLayerConfig {
 
-class DataLayerActor extends Actor with ActorLogging with Protocol with Config {
-
-  protected val host: String = datalayerConfig.getString("host")
-  protected val port: Integer = datalayerConfig.getInt("port")
+  import  DataLayerActor._
 
   protected val system: ActorSystem = context.system
   protected implicit val executor : ExecutionContextExecutor = context.dispatcher
@@ -36,15 +33,15 @@ class DataLayerActor extends Actor with ActorLogging with Protocol with Config {
 
   override def receive: Receive = {
     // Request for top n values for some aspect or concept
-    case event: DataLayerActor.TopNRequest =>
+    case event: TopNRequest =>
       event.item match {
-        case DataLayerActor.Products => topProducts(sender, event.category, event.n, event.best)
-        case DataLayerActor.Subscribers => topSubscribers(sender, event.category, event.n, event.best)
+        case Products => topProducts(sender, event.category, event.n, event.best)
+        case Subscribers => topSubscribers(sender, event.category, event.n, event.best)
     }
     // Other cases won't be supported!
     case _ =>
       log.warning("Unknown request")
-      sender ! DataLayerActor.Error
+      sender ! Error
   }
 
   private def getSort(isBest: Boolean) : String = if(isBest) "desc" else "asc"
@@ -62,12 +59,12 @@ class DataLayerActor extends Actor with ActorLogging with Protocol with Config {
       } recover {
         case _ =>
           log.error(s"Error while unmarshalling product aggregations ${response.entity}")
-          requestor ! DataLayerActor.Error
+          requestor ! Error
       }
     } recover {
       case _ =>
         log.error(s"Error while requesting for product aggregations")
-        requestor ! DataLayerActor.Error
+        requestor ! Error
     }
   }
 
@@ -82,12 +79,12 @@ class DataLayerActor extends Actor with ActorLogging with Protocol with Config {
       } recover {
         case _ =>
           log.error(s"Error while unmarshalling subscribers aggregations ${response.entity}")
-          requestor ! DataLayerActor.Error
+          requestor ! Error
       }
     } recover {
       case _ =>
         log.error(s"Error while requesting for subscribers aggregations")
-        requestor ! DataLayerActor.Error
+        requestor ! Error
     }
   }
 
