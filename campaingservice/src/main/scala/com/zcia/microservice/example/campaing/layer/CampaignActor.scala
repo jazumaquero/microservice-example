@@ -26,14 +26,15 @@ class CampaignActor(mailchimp: ActorRef, datalayer: ActorRef, settings:CampaignS
       mailchimp ! MailchimpActor.CreateList(settings.list)
     case CampaignActor.Idle =>
       log.info(s"State updated: $state")
-      if(state.ready) mailchimp ! MailchimpActor.SendCampaign(state.campaign.get.id)
-    case subscribers: SubscriberAggregationsEmbedded =>
-      val members = subscribers.embedded.subscribersAgg.map(s => Member(s.email, "subscribed"))
+      if(state.ready)
+        mailchimp ! MailchimpActor.SendCampaign(state.campaign.get.id)
+    case subscribers: SubscriberAggregations =>
+      val members = subscribers.items.map(s => Member(s.email, "subscribed"))
       log.info(s"Campaign members ready: $members")
       state=state.copy(members=Some(members))
       self ! CampaignActor.Idle
-    case products: ProductAggregationsEmbedded =>
-      val variableContent : String = products.embedded.productAggs.map(p=>settings.contentSettings.variableFormat.format(p.name)).mkString("\n")
+    case products: ProductAggregations =>
+      val variableContent : String = products.items.map(p=>settings.contentSettings.variableFormat.format(p.name)).mkString("\n")
       val htmlContent : String = settings.contentSettings.contentFormat.format(variableContent)
       log.info(s"Campaign content ready: $htmlContent")
       state=state.copy(content=Some(Content(htmlContent)))
@@ -42,16 +43,16 @@ class CampaignActor(mailchimp: ActorRef, datalayer: ActorRef, settings:CampaignS
       log.info(s"Campaign list ready: $list")
       state=state.copy(list=Some(list))
       mailchimp ! MailchimpActor.CreateCampaign(state.list.get.id,settings.campaign)
+      mailchimp ! MailchimpActor.AddMembers(state.list.get.id, state.members.get)
       self ! CampaignActor.Idle
     case campaign: Campaign =>
       log.info(s"Campaign  ready: $campaign")
       state=state.copy(campaign=Some(campaign))
-      mailchimp ! MailchimpActor.AddMembers(state.list.get.id, state.members.get)
+      mailchimp ! MailchimpActor.AddCampaignContent(state.campaign.get.id,state.content.get)
       self ! CampaignActor.Idle
     case MailchimpActor.AddedMembers =>
       log.info(s"Campaign members added!")
       state = state.copy(hasMember = true)
-      mailchimp ! MailchimpActor.AddCampaignContent(state.campaign.get.id,state.content.get)
       self ! CampaignActor.Idle
     case MailchimpActor.AddedCampaignContent =>
       log.info(s"Campaign content added!")
